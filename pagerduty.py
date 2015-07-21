@@ -35,6 +35,7 @@ import os
 import re
 import fcntl
 import time
+import datetime
 
 try:
     import json
@@ -172,9 +173,9 @@ class PagerDutyQueue(object):
 
     def enqueue(self, event):
         encoded_event = json.dumps(event)
-        process_id = os.getpid()
         time_seconds = int(time.time())
-        file_name = "%s/pd_%d_%d" % (self.queue_dir, time_seconds, process_id)
+        time_microseconds = int(datetime.time().microsecond.zfill(7))
+        file_name = "%s/pd_%d_%d" % (self.queue_dir, time_seconds, time_microseconds)
         logger.info("Queuing event %s" % str(event))
         with open(file_name, "w", 0600) as f:
             f.write(encoded_event)
