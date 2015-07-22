@@ -140,10 +140,10 @@ class PagerDutyQueue(object):
         # We need to sort the files by the timestamp.
         # This function extracts the timestamp out of the file name
         def file_timestamp(file_name):
-            return int(re.search('pd_(\d+)_', file_name).group(1))
+            return int(re.search('pd_(\d+)', file_name).group(1))
 
-        sorted_file_names = sorted(pd_file_names, key=file_timestamp)
-        return pd_file_names
+        sorted_file_names = sorted(pd_file_names, key=file_timestamp, reverse=True)
+        return sorted_file_names
 
     def _flush_queue(self):
         file_names = self._queued_files()
@@ -174,8 +174,8 @@ class PagerDutyQueue(object):
     def enqueue(self, event):
         encoded_event = json.dumps(event)
         time_seconds = int(time.time())
-        time_microseconds = int(datetime.time().microsecond.zfill(7))
-        file_name = "%s/pd_%d_%d" % (self.queue_dir, time_seconds, time_microseconds)
+        time_microseconds = str(datetime.datetime.utcnow().microsecond).zfill(7)
+        file_name = "%s/pd_%d%s" % (self.queue_dir, time_seconds, time_microseconds)
         logger.info("Queuing event %s" % str(event))
         with open(file_name, "w", 0600) as f:
             f.write(encoded_event)
@@ -244,3 +244,4 @@ if __name__ == "__main__":
     if len(sys.argv) == 4:
         pagerduty_queue.enqueue(Zabbix(sys.argv).event())
     pagerduty_queue.lock_and_flush_queue()
+
