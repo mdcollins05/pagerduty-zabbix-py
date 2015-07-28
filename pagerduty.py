@@ -35,7 +35,6 @@ import os
 import re
 import fcntl
 import time
-import datetime
 
 try:
     import json
@@ -140,9 +139,9 @@ class PagerDutyQueue(object):
         # We need to sort the files by the timestamp.
         # This function extracts the timestamp out of the file name
         def file_timestamp(file_name):
-            return int(re.search('pd_(\d+)', file_name).group(1))
+            return int(re.search('pd_(\d+)_', file_name).group(1))
 
-        sorted_file_names = sorted(pd_file_names, key=file_timestamp, reverse=True)
+        sorted_file_names = sorted(pd_file_names, key=file_timestamp)
         return sorted_file_names
 
     def _flush_queue(self):
@@ -173,9 +172,9 @@ class PagerDutyQueue(object):
 
     def enqueue(self, event):
         encoded_event = json.dumps(event)
-        time_seconds = int(time.time())
-        time_microseconds = str(datetime.datetime.utcnow().microsecond).zfill(7)
-        file_name = "%s/pd_%d%s" % (self.queue_dir, time_seconds, time_microseconds)
+        process_id = os.getpid()
+        time_microseconds = int(time.time() * 1000000)
+        file_name = "%s/pd_%d_%d" % (self.queue_dir, time_microseconds, process_id)
         logger.info("Queuing event %s" % str(event))
         with open(file_name, "w", 0600) as f:
             f.write(encoded_event)
